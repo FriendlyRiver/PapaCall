@@ -45,6 +45,7 @@ int id, command;
 int j = 0;
 unsigned long counter = 0;
 boolean flash = false;
+WiFiEventHandler disconnectedEventHandler;
 
 // buffers for receiving and sending data
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE]; //buffer to hold incoming packet,
@@ -58,6 +59,12 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(D7, INPUT_PULLUP);
   digitalWrite(LED_BUILTIN, HIGH);
+
+  disconnectedEventHandler = WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected & event)
+  {
+    ESP.restart();
+  });
+  
   WiFi.mode(WIFI_STA);
   WiFi.begin(STASSID, STAPSK);
   while (WiFi.status() != WL_CONNECTED) {
