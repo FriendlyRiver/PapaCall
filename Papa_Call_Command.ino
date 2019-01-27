@@ -77,6 +77,8 @@ int client = 0;
 unsigned int localPort = 8888;      // local port to listen on
 unsigned int remotePort = 9999;
 
+WiFiEventHandler disconnectedEventHandler;
+
 // buffers for receiving and sending data
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE]; //buffer to hold incoming packet,
 char  ReplyBuffer[9] = "whatever";       //buffer to hold the commands
@@ -92,6 +94,12 @@ void setup(void) {
   if (! ctp.begin(255)) {  // pass in 'sensitivity' coefficient
     while (1);
   }
+  
+    disconnectedEventHandler = WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected & event)
+  {
+    ESP.restart();
+  });
+  
   WiFi.mode(WIFI_STA);
   WiFi.begin(STASSID, STAPSK);
   while (WiFi.status() != WL_CONNECTED) {
