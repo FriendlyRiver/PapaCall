@@ -22,7 +22,7 @@ SOFTWARE.*/
 
 #define ID 1 //Change This to the Stations ID
 #define SENSITIVITY 100
-#define MAX_OFFLINE_TIMEOUT 2000
+#define MAX_OFFLINE_TIMEOUT 3000
 
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
@@ -65,9 +65,10 @@ void setup() {
     offlineTimeout = millis();
   });
 
-  connectedEventHandler = WiFi.onStationModeConnected([](const WiFiEventStationModeConnected & event)
+    connectedEventHandler = WiFi.onStationModeConnected([](const WiFiEventStationModeConnected & event)
   {
     Udp.beginMulticast(WiFi.localIP(), multicast_ip_addr, localPort);
+    offlineTimeout = 0;
   });
 
   WiFi.persistent(false);
@@ -84,7 +85,8 @@ void setup() {
 
 void loop() {
   if(offlineTimeout > 0) {
-    if(offlineTimeout - millis() > MAX_OFFLINE_TIMEOUT) ESP.restart();
+    if(abs(offlineTimeout - millis()) > MAX_OFFLINE_TIMEOUT) ESP.restart();
+    else offlineTimeout = 0;
   }
   int packetSize = Udp.parsePacket();
   if (packetSize) {
@@ -132,6 +134,11 @@ void loop() {
     for (int i = 0; i < NUMPIXELS; ++i) {
       strip.setPixelColor(i, 0, 0, 0);
     }
+    strip.show();
+  }
+  if (analogRead(A0) < SENSITIVITY && Status == 2) Status = 3;
+  ++counter;
+}
     strip.show();
   }
   if (analogRead(A0) < SENSITIVITY && Status == 2) Status = 3;
