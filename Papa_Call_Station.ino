@@ -65,7 +65,7 @@ void setup() {
     offlineTimeout = millis();
   });
 
-    connectedEventHandler = WiFi.onStationModeConnected([](const WiFiEventStationModeConnected & event)
+  connectedEventHandler = WiFi.onStationModeConnected([](const WiFiEventStationModeConnected & event)
   {
     Udp.beginMulticast(WiFi.localIP(), multicast_ip_addr, localPort);
     offlineTimeout = 0;
