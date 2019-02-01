@@ -141,12 +141,12 @@ void loop() {
     }
   }
   if (counter % 1000 == 0) {
-    if (positions[j - 1].Status == 1 || positions[j - 1].Status == 3) updateStatus(positions[j - 1].ID, checkStatus(positions[j - 1].ID, 4));
+    if (positions[j - 1].Status == 1 || positions[j - 1].Status == 3) updateStatus(positions[j - 1].ID, checkStatus(positions[j - 1].ID, 12));
     ++j;
     if (j > NUMCLIENTS) j = 1;
   }
   if (counter % 100 == 0) {
-    if (positions[jj - 1].Status == 2) updateStatus(positions[jj - 1].ID, checkStatus(positions[jj - 1].ID, 4));
+    if (positions[jj - 1].Status == 2) updateStatus(positions[jj - 1].ID, checkStatus(positions[jj - 1].ID, 12));
     ++jj;
     if (jj > NUMCLIENTS) jj = 1;
   }
