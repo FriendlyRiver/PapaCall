@@ -22,6 +22,7 @@ SOFTWARE.*/
 
 #define ID 1 //Change This to the Stations ID
 #define SENSITIVITY 100
+#define MAX_OFFLINE_TIMEOUT 2000
 
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
@@ -32,20 +33,18 @@ SOFTWARE.*/
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
-
-
 #define STASSID "YOUR_SSID" //Change this to your SSID
 #define STAPSK  "YOUR_PSK"  //Change this to your WLANs preshared key
 
-
 unsigned int localPort = 8888;      //local port to listen on
 unsigned int remotePort = 9999;     //remote port for the unicast reply
+unsigned long offlineTimeout = 0;
 int Status = 1;
 int id, command;
 int j = 0;
 unsigned long counter = 0;
 boolean flash = false;
-WiFiEventHandler disconnectedEventHandler;
+WiFiEventHandler disconnectedEventHandler, connectedEventHandler;
 
 // buffers for receiving and sending data
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE]; //buffer to hold incoming packet,
@@ -62,21 +61,31 @@ void setup() {
 
   disconnectedEventHandler = WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected & event)
   {
-    ESP.restart();
+    Udp.stop();
+    offlineTimeout = millis();
   });
-  
+
+  connectedEventHandler = WiFi.onStationModeConnected([](const WiFiEventStationModeConnected & event)
+  {
+    Udp.beginMulticast(WiFi.localIP(), multicast_ip_addr, localPort);
+  });
+
+  WiFi.persistent(false);
   WiFi.mode(WIFI_STA);
   WiFi.begin(STASSID, STAPSK);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
   }
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
-  Udp.beginMulticast(WiFi.localIP(), multicast_ip_addr, localPort);
+  
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
 }
 
 void loop() {
+  if(offlineTimeout > 0) {
+    if(offlineTimeout - millis() > MAX_OFFLINE_TIMEOUT) ESP.restart();
+  }
   int packetSize = Udp.parsePacket();
   if (packetSize) {
     IPAddress remote = Udp.remoteIP();
