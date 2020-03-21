@@ -1,6 +1,6 @@
 /*MIT License
 
-Copyright (c) 2019 Friendly River LLC, Dimitrios F. Kallivroussis
+Copyright (c) 2019,2020 Friendly River LLC, Dimitrios F. Kallivroussis
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,17 +58,12 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(D7, INPUT_PULLUP);
   digitalWrite(LED_BUILTIN, HIGH);
-
-  disconnectedEventHandler = WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected & event)
-  {
-    Udp.stop();
-    offlineTimeout = millis();
-  });
+  Serial.begin(115200);
 
   connectedEventHandler = WiFi.onStationModeConnected([](const WiFiEventStationModeConnected & event)
-  {
-    Udp.beginMulticast(WiFi.localIP(), multicast_ip_addr, localPort);
-    offlineTimeout = 0;
+  { 
+      Udp.beginMulticast(WiFi.localIP(), multicast_ip_addr, localPort);
+      offlineTimeout = millis();
   });
 
   WiFi.persistent(false);
@@ -77,17 +72,16 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
   }
+  Serial.println("Connecting to WiFi");
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
-  
+
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
+  offlineTimeout = millis();
 }
 
 void loop() {
-  if(offlineTimeout > 0) {
-    if(abs(offlineTimeout - millis()) > MAX_OFFLINE_TIMEOUT) ESP.restart();
-    else offlineTimeout = 0;
-  }
+  if (abs(offlineTimeout - millis()) > MAX_OFFLINE_TIMEOUT) ESP.restart();
   int packetSize = Udp.parsePacket();
   if (packetSize) {
     IPAddress remote = Udp.remoteIP();
@@ -98,6 +92,7 @@ void loop() {
     command = atoi(pch);
 
     if (id == ID) {
+      Serial.println("Received");
       if (command == 1) {
         Status = 2;
 
@@ -110,6 +105,7 @@ void loop() {
         Udp.endPacket();
       }
       memset(packetBuffer, 0, sizeof(packetBuffer));
+      offlineTimeout = millis();
     }
   }
   delay(10);
@@ -134,11 +130,6 @@ void loop() {
     for (int i = 0; i < NUMPIXELS; ++i) {
       strip.setPixelColor(i, 0, 0, 0);
     }
-    strip.show();
-  }
-  if (analogRead(A0) < SENSITIVITY && Status == 2) Status = 3;
-  ++counter;
-}
     strip.show();
   }
   if (analogRead(A0) < SENSITIVITY && Status == 2) Status = 3;
